@@ -1,0 +1,19 @@
+# ishga tushirishda yaratiladi
+.venv/
+bin/
+_log/
+jobs/*
+!jobs/.gitkeep
+config.json
+# shriftlar va dvigatel nusxalari — Mac'da _tayyorlash.py / start.command bilan tiklanadi
+web/fonts/*.ttf
+engines/*/
+!engines/_tayyorlash.py
+!engines/README.md
+_tekshiruv/shots/
+_tekshiruv/_venvtest/
+_tekshiruv/*_natija.txt
+_tekshiruv/snapshot_*.txt
+__pycache__/
+*.pyc
+.DS_Store

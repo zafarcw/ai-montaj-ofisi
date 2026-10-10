@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="uz">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<title>AI Montaj Ofisi</title>
+<link rel="icon" href="/web/icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/web/style.css">
+</head>
+<body>
+<div class="bg-grid" aria-hidden="true"></div>
+<div class="bg-glow" aria-hidden="true"></div>
+
+<header class="topbar">
+  <div class="brand">
+    <img id="logo-img" class="logo-img" alt="" hidden>
+    <span id="logo-mark" class="logo-mark" aria-hidden="true"></span>
+    <h1 id="site-name">AI Montaj Ofisi</h1>
+  </div>
+  <div class="topbar-center">
+    <span id="live" class="live"><i></i><b>Jonli</b></span>
+    <span class="stat"><small>Bugun</small><b id="st-today">0</b></span>
+    <span class="stat"><small>Navbat</small><b id="st-queue">0</b></span>
+    <span id="st-claude" class="stat claude-st" title="Claude Code holati"><small>Claude</small><b>…</b></span>
+  </div>
+  <div class="topbar-right">
+    <span id="clock" class="clock">00:00</span>
+    <button id="btn-settings" class="icon-btn" title="Sozlamalar" aria-label="Sozlamalar">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3h0a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8v0a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+    </button>
+  </div>
+</header>
+
+<main class="layout">
+  <!-- CHAP PANEL -->
+  <aside class="side">
+    <div class="side-head">
+      <h2>Ishlar</h2>
+      <button id="btn-new" class="btn primary small">+ Yangi ish</button>
+    </div>
+    <ul id="job-list" class="job-list"></ul>
+    <div id="side-empty" class="side-empty">Hali ish yo'q. <b>Yangi ish</b> bilan boshlang.</div>
+  </aside>
+
+  <!-- MARKAZ: OFIS -->
+  <section class="office">
+    <div id="agents" class="agents"></div>
+    <svg id="handoff-layer" class="handoff-layer" aria-hidden="true"></svg>
+
+    <div class="desk">
+      <div class="desk-head">
+        <div class="desk-title">
+          <span id="desk-client" class="desk-client">—</span>
+          <span id="desk-topic" class="desk-topic">Montaj stoli</span>
+        </div>
+        <div class="desk-right">
+          <span id="job-meta" class="muted meta"></span>
+          <span id="replay-badge" class="replay-badge" hidden>Qayta ko'rish</span>
+          <span id="desk-status" class="status-pill">—</span>
+          <span class="job-controls" id="job-controls" hidden>
+            <button id="btn-start" class="btn primary small">▶ Boshlash</button>
+            <button id="btn-cancel" class="btn danger small" hidden>■ Bekor qilish</button>
+          </span>
+        </div>
+      </div>
+
+      <div id="monitor" class="monitor fmt-9x16">
+        <video id="video" class="video" controls playsinline preload="metadata" hidden></video>
+        <img id="still" class="still" alt="" hidden>
+        <div id="monitor-empty" class="monitor-empty">
+          <svg viewBox="0 0 48 48" width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><rect x="6" y="10" width="36" height="26" rx="4"/><path d="M20 18l10 5-10 5z" fill="currentColor" stroke="none"/><path d="M16 42h16"/></svg>
+          <p>Ish tanlang yoki yangi ish bering</p>
+        </div>
+        <div id="monitor-label" class="monitor-label" hidden></div>
+        <div id="render-overlay" class="render-overlay" hidden>
+          <div class="render-ring"><svg viewBox="0 0 36 36"><circle class="track" cx="18" cy="18" r="15.5"/><circle id="render-arc" class="arc" cx="18" cy="18" r="15.5"/></svg><b id="render-pct">0%</b></div>
+          <div id="render-text" class="render-text">Render</div>
+        </div>
+      </div>
+
+      <div class="timeline-wrap">
+        <div class="timeline-head"><span>Timeline</span><span id="tl-info" class="muted">EDL kutilmoqda</span></div>
+        <div id="timeline" class="timeline"><div id="playhead" class="playhead" hidden></div></div>
+      </div>
+
+      <div id="final-panel" class="final-panel" hidden>
+        <div class="final-row">
+          <div class="versions" id="versions"></div>
+          <div class="final-actions">
+            <button id="btn-reveal" class="btn ghost small">Finder'da ochish</button>
+            <button id="btn-replay" class="btn ghost small">▶ Qayta o'ynatish</button>
+          </div>
+        </div>
+        <div class="fix-row">
+          <textarea id="fix-text" rows="2" placeholder="Tuzatish: nimani o'zgartiraylik? (masalan: musiqa 3 dB pastroq, 2-kartani olib tashla)"></textarea>
+          <button id="btn-fix" class="btn primary">Tuzatish yuborish</button>
+        </div>
+      </div>
+    </div>
+
+  </section>
+
+  <!-- PASTKI PANEL -->
+  <section class="bottom">
+    <div class="tabs">
+      <button class="tab active" data-tab="log">Jurnal <span id="log-count" class="count">0</span></button>
+      <button class="tab" data-tab="decisions">Qarorlar <span id="dec-count" class="count">0</span></button>
+    </div>
+    <div id="tab-log" class="tab-pane active"><ul id="log" class="log"></ul></div>
+    <div id="tab-decisions" class="tab-pane"><ul id="decisions" class="log decisions"></ul></div>
+  </section>
+</main>
+
+<!-- YANGI ISH -->
+<div id="modal-new" class="modal" hidden>
+  <div class="modal-card">
+    <div class="modal-head"><h3>Yangi ish</h3><button class="icon-btn modal-close" aria-label="Yopish">✕</button></div>
+    <form id="form-new" class="form" autocomplete="off">
+      <div class="row2">
+        <label>Mijoz <input name="client" required placeholder="Kamilovs Clinic"></label>
+        <label>Mavzu <input name="topic" required placeholder="Gaymorit"></label>
+      </div>
+      <label>Manba (01_Kiruvchi)
+        <div class="source-box">
+          <div id="source-tree" class="source-tree"></div>
+          <div id="drop" class="drop">
+            <input id="file-input" type="file" multiple hidden>
+            <p>Faylni shu yerga tashlang yoki <button type="button" id="btn-pick" class="link">tanlang</button></p>
+            <small>4K fayllar bo'laklab yuklanadi → <code id="drop-dest">01_Kiruvchi/&lt;mijoz&gt;_&lt;sana&gt;/</code></small>
+            <div id="upload-list" class="upload-list"></div>
+          </div>
+        </div>
+        <div id="selected-sources" class="chips"></div>
+      </label>
+      <label>Talablar <textarea name="requirements" rows="3" placeholder="Mijoz nima xohlaydi — so'zma-so'z. Masalan: Reels uchun, musiqa ovozdan past, yuz ochiq, telefon raqami +998 …"></textarea></label>
+      <div class="row3">
+        <label>Format <select name="format"><option value="9:16">9:16 (Reels)</option><option value="16:9">16:9</option><option value="1:1">1:1</option><option value="4:5">4:5</option></select></label>
+        <label>FPS <select name="fps"><option>59.94</option><option>29.97</option><option>25</option><option>30</option><option>50</option><option>60</option></select></label>
+        <label>Davomiylik (s) <input name="duration" type="number" min="3" max="3600" placeholder="avto"></label>
+      </div>
+      <div class="row3">
+        <label>Uslub referensi <select name="style_ref" id="sel-ref"><option value="">Asosiy (Apple style)</option></select></label>
+        <label>Musiqa <select name="music" id="sel-music"><option value="avto">Avto (02_Assets/Musiqa)</option><option value="yoq">Yo'q</option></select></label>
+        <label>Model / effort <span class="row-inline"><select name="model" id="sel-model"></select><select name="effort" id="sel-effort"></select></span></label>
+      </div>
+      <div class="form-actions">
+        <label class="check"><input type="checkbox" name="start" checked> Darhol boshlash</label>
+        <button type="submit" class="btn primary">Ishni yaratish</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- SOZLAMALAR -->
+<div id="modal-settings" class="modal" hidden>
+  <div class="modal-card">
+    <div class="modal-head"><h3>Sozlamalar</h3><button class="icon-btn modal-close" aria-label="Yopish">✕</button></div>
+    <form id="form-settings" class="form">
+      <div class="row2">
+        <label>Nom <input name="name"></label>
+        <label>Aksent rang <span class="row-inline"><input name="accent" type="color"><input name="accent_hex" placeholder="#0A84FF"></span></label>
+      </div>
+      <label>Logo (web/logo.png yoki URL) <input name="logo" placeholder="/web/logo.png"></label>
+      <div class="row2">
+        <label>Standart model <select name="model" id="set-model"></select></label>
+        <label>Standart effort <select name="effort" id="set-effort"></select></label>
+      </div>
+      <label>Claude CLI yo'li (bo'sh = avto) <input name="claude_bin" placeholder="~/.local/bin/claude"></label>
+      <div class="agents-edit" id="agents-edit"></div>
+      <div class="form-actions"><span id="settings-info" class="muted"></span><button type="submit" class="btn primary">Saqlash</button></div>
+    </form>
+  </div>
+</div>
+
+<div id="toast" class="toast" hidden></div>
+<script src="/web/app.js"></script>
+</body>
+</html>

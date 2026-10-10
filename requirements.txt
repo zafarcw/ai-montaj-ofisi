@@ -1,0 +1,8 @@
+# AI Montaj Ofisi — montaj dvigatellari uchun (server stdlib'da, paket talab qilmaydi)
+numpy>=1.26
+pillow>=10
+opencv-python-headless>=4.9
+onnxruntime>=1.17
+scipy>=1.11
+skia-python>=87.5
+uharfbuzz>=0.39
