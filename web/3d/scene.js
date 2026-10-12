@@ -1,6 +1,8 @@
 // 3D ofis — 1-bosqich: sahna, zonalar, stollar, monitorlar, kamera.
 import * as THREE from "three";
 import { OrbitControls } from "/web/vendor/three/OrbitControls.js";
+import { Office } from "/web/3d/workers.js";
+import { connectFeed } from "/web/3d/feed.js";
 import { CSS2DRenderer, CSS2DObject } from "/web/vendor/three/CSS2DRenderer.js";
 
 const FALLBACK = [
@@ -57,8 +59,9 @@ const nDesks = (zones.length - 1) * ROWS_DESK * COLS_DESK;
 const deskMesh = new THREE.InstancedMesh(new THREE.BoxGeometry(2.4, 0.12, 1.2), new THREE.MeshStandardMaterial({ color: 0x2b303b, roughness: 0.7 }), nDesks);
 const legGeo = new THREE.BoxGeometry(0.1, 0.75, 0.1);
 const legMesh = new THREE.InstancedMesh(legGeo, new THREE.MeshStandardMaterial({ color: 0x1a1d24 }), nDesks * 4);
-const monMesh = new THREE.InstancedMesh(new THREE.BoxGeometry(1.0, 0.62, 0.06), new THREE.MeshStandardMaterial({ color: 0x0a0b0e, emissive: 0x000000, roughness: 0.4 }), nDesks);
+const monMesh = new THREE.InstancedMesh(new THREE.BoxGeometry(1.0, 0.62, 0.06), new THREE.MeshBasicMaterial({ color: 0xffffff }), nDesks);
 const chairMesh = new THREE.InstancedMesh(new THREE.BoxGeometry(0.7, 0.1, 0.7), new THREE.MeshStandardMaterial({ color: 0x3a4050, roughness: 0.8 }), nDesks);
+const MON_OFF = new THREE.Color(0x0a0b0e);
 const tmp = new THREE.Object3D();
 let di = 0, li = 0;
 
@@ -89,6 +92,7 @@ zones.forEach((z, i) => {
     sofa.position.set(cx + 2.4, 0.3, cz + 2.4); scene.add(sofa);
     return;
   }
+  z.desks = [];
   for (let r = 0; r < ROWS_DESK; r++) for (let k = 0; k < COLS_DESK; k++) {
     const x = cx - ZONE_W / 2 + 2.1 + k * 3.45, zz = cz - 1.6 + r * 3.4;
     tmp.rotation.set(0, 0, 0); tmp.scale.set(1, 1, 1);
@@ -97,12 +101,20 @@ zones.forEach((z, i) => {
       tmp.position.set(x + dx, 0.375, zz + dz); tmp.updateMatrix(); legMesh.setMatrixAt(li++, tmp.matrix);
     }
     tmp.position.set(x, 1.4, zz - 0.35); tmp.updateMatrix(); monMesh.setMatrixAt(di, tmp.matrix);
-    monMesh.setColorAt(di, new THREE.Color(0x0a0b0e)); // 2-bosqichda hodisaga qarab yonadi
+    monMesh.setColorAt(di, MON_OFF);
+    z.desks.push({ x, z: zz, mon: di });
     tmp.position.set(x, 0.5, zz + 1.1); tmp.updateMatrix(); chairMesh.setMatrixAt(di, tmp.matrix);
     di++;
   }
 });
+const layout = { ZONE_W, ZONE_D, zones, kitchen: zones.find((z) => z.kitchen) };
 for (const m of [deskMesh, legMesh, monMesh, chairMesh]) { m.instanceMatrix.needsUpdate = true; scene.add(m); }
+
+// xodimlar: har bo'lim boshlig'i o'z stolida; holat faqat feed.js (SSE) dan
+const office = new Office(scene, layout, {
+  setMonitor(i, on, color) { monMesh.setColorAt(i, on ? color : MON_OFF); monMesh.instanceColor.needsUpdate = true; },
+});
+connectFeed(office);
 
 // kamera: izometrik boshlang'ich holat
 const span = Math.max(totalW, totalD);
@@ -123,14 +135,16 @@ function resize() {
 }
 addEventListener("resize", resize); resize();
 
+let prev = performance.now();
 let frames = 0, last = performance.now();
 const fpsEl = document.querySelector("#fps b");
 function tick(now) {
   requestAnimationFrame(tick);
   controls.update();
+  office.update(Math.min(0.1, (now - prev) / 1000), now / 1000); prev = now;
   renderer.render(scene, camera); labels.render(scene, camera);
   frames++;
   if (now - last >= 1000) { fpsEl.textContent = Math.round(frames * 1000 / (now - last)); frames = 0; last = now; }
 }
 requestAnimationFrame(tick);
-window.__ofis3d = { scene, camera, controls, zones, renderer };
+window.__ofis3d = { scene, camera, controls, zones, renderer, office };
