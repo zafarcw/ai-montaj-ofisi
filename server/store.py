@@ -44,6 +44,19 @@ DEFAULT_CONFIG = {
         {"id": "rangchi", "name": "Rangchi", "color": "#FF375F",
          "role": "Grade, punch-in, render, eksport"},
     ],
+    # CHAT-bosqich: xodim bilan ovozli chat (faqat /3d). roast_ok — "18 yoshdan kattaman" tasdig'i (bir marta).
+    "chat": {"mode": "roast", "roast_ok": False, "voice_reply": True, "model": "haiku", "history": 8},
+    # TTS: provider "auto" = ElevenLabs kaliti bo'lsa ElevenLabs, bo'lmasa macOS `say`. Kalit faqat shu faylda (git'da yo'q).
+    "tts": {
+        "provider": "auto", "elevenlabs_key": "", "elevenlabs_model": "eleven_multilingual_v2",
+        "voices": {
+            "rejissyor": {"say": "Daniel", "rate": 180, "eleven": "pNInz6obpgDQGcFmaJgB"},
+            "ovozchi": {"say": "Rocko (Italian (Italy))", "rate": 185, "eleven": "ErXwobaYiN019PkySvjV"},
+            "montajchi": {"say": "Milena", "rate": 215, "eleven": "21m00Tcm4TlvDq8ikWAM"},
+            "motion": {"say": "Yelda", "rate": 200, "eleven": "TxGEqnHWrfWFTfGW9XjX"},
+            "rangchi": {"say": "Aru", "rate": 185, "eleven": "EXAVITQu4vr4xnSDxMaL"},
+        },
+    },
 }
 
 _lock = threading.RLock()
@@ -57,7 +70,10 @@ def load_config():
             try:
                 user = json.loads(CONFIG_PATH.read_text(encoding="utf-8"))
                 for k, v in user.items():
-                    cfg[k] = v
+                    if isinstance(v, dict) and isinstance(cfg.get(k), dict):
+                        cfg[k] = {**cfg[k], **v}  # yangi standart kalitlar yo'qolmasin
+                    else:
+                        cfg[k] = v
             except Exception:
                 pass
         return cfg
@@ -67,7 +83,11 @@ def save_config(patch):
     with _lock:
         cfg = load_config()
         for k, v in patch.items():
-            if k in DEFAULT_CONFIG:
+            if k not in DEFAULT_CONFIG:
+                continue
+            if isinstance(v, dict) and isinstance(cfg.get(k), dict):
+                cfg[k] = {**cfg[k], **v}          # ichki lug'at (chat, tts): qisman yangilash
+            else:
                 cfg[k] = v
         CONFIG_PATH.write_text(json.dumps(cfg, ensure_ascii=False, indent=2), encoding="utf-8")
         return cfg

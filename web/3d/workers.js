@@ -31,7 +31,11 @@ const G = {
   brim: new THREE.BoxGeometry(0.42, 0.04, 0.3), bun: new THREE.SphereGeometry(0.15, 10, 8), curl: new THREE.SphereGeometry(0.13, 8, 6),
   cuff: new THREE.TorusGeometry(0.4, 0.06, 8, 22), band: new THREE.TorusGeometry(0.44, 0.035, 8, 24, Math.PI), cup: new THREE.CylinderGeometry(0.12, 0.12, 0.09, 14),
   ring: new THREE.CylinderGeometry(0.125, 0.125, 0.03, 14), neck: new THREE.CylinderGeometry(0.1, 0.11, 0.14, 10), longHair: new THREE.BoxGeometry(0.62, 0.55, 0.22),
+  hit: new THREE.CylinderGeometry(0.85, 0.85, 3.1, 8),
 };
+const HIT_MAT = new THREE.MeshBasicMaterial({ visible: false });
+const wrapAngle = (a) => Math.atan2(Math.sin(a), Math.cos(a));
+const lerpAngle = (a, b, k) => a + wrapAngle(b - a) * k;
 
 function pivot(w, h, d, m, y, x = 0) { // yuqori uchi pivotda osilgan quti (son, boldir, qoʻl)
   const g = new THREE.Group(); const b = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m); b.position.y = -h / 2; b.castShadow = true; g.add(b); g.position.set(x, y, 0); return g;
@@ -100,10 +104,13 @@ class Worker {
     this.state = "idle"; this.mode = "seat"; this.sit = 1; this.path = []; this.t = Math.random() * 10; this.phase = Math.random() * 7;
     this.lastEvent = null; this.bubbleTimer = 0; this.awayTimer = 0; this.nextWalk = 25 + Math.random() * 30; this.idleFor = 0;
     this.wantWork = false; this.err = false; this.face = null; this.lodScale = -1;
+    // CHAT: bosish silindri (1-qatlam), kameraga qarash, gapirish amplitudasi
+    this.hit = new THREE.Mesh(G.hit, HIT_MAT); this.hit.position.y = 1.55; this.hit.layers.set(1); this.hit.userData.worker = this; this.root.add(this.hit);
+    this.chat = false; this.thinking = false; this.talk = 0; this.yaw = Math.PI;
   }
-  setBubble(tag, text, color) {
+  setBubble(tag, text, color, secs = 6, wrap = false) {
     this.bubbleEl.style.setProperty("--tc", color); this.bubbleEl.firstChild.textContent = tag;
-    this.bubbleEl.lastChild.textContent = text || ""; this.bubbleEl.classList.add("on"); this.bubbleTimer = 6;
+    this.bubbleEl.lastChild.textContent = text || ""; this.bubbleEl.classList.add("on"); this.bubbleEl.classList.toggle("talk", wrap); this.bubbleTimer = secs;
   }
   hideBubble() { this.bubbleEl.classList.remove("on"); }
 }
@@ -131,6 +138,18 @@ export class Office {
     w.setBubble(name, text, TOOL_COLORS[name] || "#98989D");
   }
   reset() { for (const w of Object.values(this.workers)) { w.err = false; w.flagEl.classList.remove("on"); this._work(w, false); w.hideBubble(); w.lastEvent = null; } }
+  // ---------- CHAT (chat.js chaqiradi): bu holatlar hech qachon "ishlayapti" koʻrinishini bermaydi ----------
+  pickables() { return Object.values(this.workers).map((w) => w.hit); }
+  setChat(agentId, on) {
+    const w = this.workers[agentId]; if (!w) return;
+    w.chat = on; if (!on) { w.talk = 0; w.thinking = false; return; }
+    if (w.state === "sleep") { this._setState(w, "idle"); w.lastEvent = null; }   // uygʻotamiz (monitor yonmaydi)
+    if (w.mode === "away" || w.mode === "out") this._goBack(w);                   // oshxonadan stoliga qaytadi
+  }
+  setTalk(agentId, amp) { const w = this.workers[agentId]; if (w) w.talk = Math.max(0, Math.min(1, amp || 0)); }
+  think(agentId, on) { const w = this.workers[agentId]; if (!w) return; w.thinking = on; if (on) w.setBubble("💬", "…", w.zone.color, 60, true); else if (w.bubbleEl.lastChild.textContent === "…") w.hideBubble(); }
+  say(agentId, text) { const w = this.workers[agentId]; if (w) w.setBubble("💬", text, w.zone.color, Math.min(14, 4 + text.length / 12), true); }
+  setHover(agentId) { for (const w of Object.values(this.workers)) w.nameEl.classList.toggle("hover", w.id === agentId); }
   // ---------- ichki ----------
   _work(w, on) {
     w.wantWork = on;
@@ -164,21 +183,21 @@ export class Office {
     if (w.bubbleTimer > 0) { w.bubbleTimer -= dt; if (w.bubbleTimer <= 0) w.hideBubble(); }
     const seated = w.mode === "seat";
     // uxlash: 60 s hodisa yoʻq (ishlayotgan stol ham — "ishlayapti" deb koʻrinmaydi)
-    if (seated && (w.state === "working" || w.state === "idle") && w.lastEvent !== null && t - w.lastEvent > SLEEP_AFTER) { this._setState(w, "sleep"); w.wantWork = false; }
-    if (seated && w.state === "idle" && w.lastEvent === null && w.idleFor > SLEEP_AFTER) this._setState(w, "sleep");
-    // tasodifiy oshxonaga borish (faqat boʻsh va uxlamayotgan)
-    if (seated && w.state === "idle" && !w.err && w.idleFor > w.nextWalk) { w.nextWalk = 30 + Math.random() * 40; this._goOut(w); }
+    if (seated && !w.chat && (w.state === "working" || w.state === "idle") && w.lastEvent !== null && t - w.lastEvent > SLEEP_AFTER) { this._setState(w, "sleep"); w.wantWork = false; }
+    if (seated && !w.chat && w.state === "idle" && w.lastEvent === null && w.idleFor > SLEEP_AFTER) this._setState(w, "sleep");
+    // tasodifiy oshxonaga borish (faqat boʻsh, uxlamayotgan va suhbatda boʻlmagan)
+    if (seated && !w.chat && w.state === "idle" && !w.err && w.idleFor > w.nextWalk) { w.nextWalk = 30 + Math.random() * 40; this._goOut(w); }
     if (w.mode === "away") { w.awayTimer -= dt; if (w.awayTimer <= 0) this._goBack(w); }
     // harakat
     let moving = false;
     if ((w.mode === "out" || w.mode === "back") && w.path.length) {
       const tgt = w.path[0], pos = w.root.position, d = this.tmp.subVectors(tgt, pos); d.y = 0; const len = d.length();
       const step = WALK_SPEED * dt;
-      if (len <= step) { pos.copy(tgt); w.path.shift(); } else { d.multiplyScalar(step / len); pos.add(d); w.root.rotation.y = Math.atan2(d.x, d.z); }
+      if (len <= step) { pos.copy(tgt); w.path.shift(); } else { d.multiplyScalar(step / len); pos.add(d); w.root.rotation.y = w.yaw = Math.atan2(d.x, d.z); }
       moving = true;
       if (!w.path.length) {
-        if (w.mode === "out") { w.mode = "away"; w.awayTimer = 6 + Math.random() * 6; w.state = "idle"; if (w.face) w.root.rotation.y = Math.atan2(w.face.x - pos.x, w.face.z - pos.z); }
-        else { w.mode = "seat"; w.root.position.copy(w.seat); w.root.rotation.y = Math.PI; this._setState(w, w.wantWork ? "working" : "idle"); }
+        if (w.mode === "out") { w.mode = "away"; w.awayTimer = 6 + Math.random() * 6; w.state = "idle"; if (w.face) w.root.rotation.y = w.yaw = Math.atan2(w.face.x - pos.x, w.face.z - pos.z); }
+        else { w.mode = "seat"; w.root.position.copy(w.seat); w.root.rotation.y = w.yaw = Math.PI; this._setState(w, w.wantWork ? "working" : "idle"); }
       }
     }
     // poza
@@ -187,6 +206,13 @@ export class Office {
     w.fig.position.y = 0.03 * s + (moving ? Math.abs(Math.sin(w.t * 9)) * 0.05 : 0);
     w.legL.rotation.x = -Math.PI / 2 * s + swing; w.legR.rotation.x = -Math.PI / 2 * s - swing;
     w.legL.shin.rotation.x = Math.PI / 2 * s + Math.max(0, swing) * 0.8; w.legR.shin.rotation.x = Math.PI / 2 * s + Math.max(0, -swing) * 0.8;
+    // CHAT: oʻtirgan xodim kameraga oʻgiriladi (ishlayotgan boʻlsa faqat boshini buradi)
+    let camYaw = null;
+    if (seated && !moving && camPos) {
+      camYaw = Math.atan2(camPos.x - w.root.position.x, camPos.z - w.root.position.z);
+      const target = w.chat && w.state !== "working" ? camYaw : Math.PI;
+      w.yaw = lerpAngle(w.yaw, target, Math.min(1, dt * 4.5)); w.root.rotation.y = w.yaw;
+    }
     let armX = -0.45, armZ = 0, headX = 0, headY = 0, lean = 0, breath = Math.sin(w.t * 1.8) * 0.012, typing = false;
     if (moving) { w.armL.rotation.x = -swing * 0.9; w.armR.rotation.x = swing * 0.9; }
     else if (w.err) { armX = -2.6; armZ = 0.55; headX = 0.3; breath = Math.sin(w.t * 6) * 0.01; }
@@ -195,7 +221,13 @@ export class Office {
       w.armL.rotation.x = -1.3 + k * 0.14; w.armR.rotation.x = -1.3 - k * 0.14; breath = Math.sin(w.t * 2) * 0.008;
     } else if (w.state === "sleep") { armX = -1.1; headX = 0.7; lean = 0.25; breath = Math.sin(w.t * 1.1) * 0.02; }
     else { headY = Math.sin(w.t * 0.6 + w.phase) * 0.35; armX = -0.5 - s * 0.6; }
+    if (w.chat && seated && !moving && camYaw !== null) {            // suhbat: bosh kameraga; gapirganda yengil bosh irgʻash, qoʻl harakati
+      headY = Math.max(-0.9, Math.min(0.9, wrapAngle(camYaw - w.yaw)));
+      if (!typing) { headX = -0.04 + Math.sin(w.t * 7) * 0.05 * w.talk; armX = -0.5 - s * 0.6 - w.talk * 0.35; }
+      if (w.thinking && !typing) { headX = 0.18; headY += 0.25; armX = -1.6; armZ = 0.1; }   // oʻylayapti: bosh engashgan, qoʻl iyakda
+    }
     if (!moving && !typing) { w.armL.rotation.x = armX; w.armR.rotation.x = armX; }
+    const tk = w.talk; w.mouth.scale.set(1 - 0.3 * tk, 1 + 6 * tk, 1); w.mouth.position.y = -0.15 - 0.045 * tk;
     w.armL.rotation.z = armZ; w.armR.rotation.z = -armZ;
     w.head.rotation.x = headX; w.head.rotation.y = headY; w.upper.rotation.x = lean; w.fig.scale.y = FIG_SCALE * (1 + breath);
     const blink = ((w.t + w.phase) % 3.7) < 0.12 ? 0.12 : 1; w.eyes[0].scale.y = blink; w.eyes[1].scale.y = blink;

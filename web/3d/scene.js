@@ -8,6 +8,7 @@ import { UnrealBloomPass } from "/web/vendor/three/postprocessing/UnrealBloomPas
 import { OutputPass } from "/web/vendor/three/postprocessing/OutputPass.js";
 import { Office } from "/web/3d/workers.js";
 import { connectFeed } from "/web/3d/feed.js";
+import { initChat } from "/web/3d/chat.js";
 import { mat, glow, box, cyl, plant, glassWall, kitchen, roleGear, poolTexture, screenTexture, GLASS } from "/web/3d/props.js";
 
 const FALLBACK = [
@@ -188,6 +189,34 @@ const office = new Office(scene, layout, {
 });
 connectFeed(office);
 
+// ---------- CHAT: xodimni bosish → panel; kamera xodimga yaqinlashadi (panel oʻngda → xodim chapda koʻrinsin) ----------
+let focus = null;
+function focusWorker(w) {
+  const p = w.root.position, target = new THREE.Vector3(p.x, 1.2, p.z);
+  const dir = camera.position.clone().sub(controls.target); dir.y = 0; if (dir.lengthSq() < 1e-4) dir.set(0.4, 0, 1); dir.normalize();
+  const right = new THREE.Vector3(0, 1, 0).cross(dir);                       // kamera oʻngi
+  const shift = matchMedia("(min-width: 761px)").matches ? 1.4 : 0;
+  const camTo = target.clone().addScaledVector(dir, 7.5).add(new THREE.Vector3(0, 6.2, 0));   // tikroq — toʻsiq devorlar xalaqit bermasin
+  focus = { t0: performance.now(), dur: 900, fromT: controls.target.clone(), toT: target.addScaledVector(right, shift), fromC: camera.position.clone(), toC: camTo.addScaledVector(right, shift) };
+}
+const chat = initChat({ office, agents, onOpen: focusWorker });
+const ray = new THREE.Raycaster(); ray.layers.set(1); const ndc = new THREE.Vector2();
+function pickAt(x, y) {
+  const r = renderer.domElement.getBoundingClientRect();
+  ndc.set(((x - r.left) / r.width) * 2 - 1, -((y - r.top) / r.height) * 2 + 1); ray.setFromCamera(ndc, camera);
+  const hits = ray.intersectObjects(office.pickables(), false); return hits.length ? hits[0].object.userData.worker : null;
+}
+let down = null, hoverT = 0;
+renderer.domElement.addEventListener("pointerdown", (e) => { focus = null; if (e.button === 0) down = { x: e.clientX, y: e.clientY, t: performance.now() }; });
+renderer.domElement.addEventListener("pointerup", (e) => {
+  if (!down) return; const dist = Math.hypot(e.clientX - down.x, e.clientY - down.y), dt = performance.now() - down.t; down = null;
+  if (dist < 6 && dt < 600) { const w = pickAt(e.clientX, e.clientY); if (w) chat.open(w.id); }
+});
+renderer.domElement.addEventListener("pointermove", (e) => {
+  const now = performance.now(); if (now - hoverT < 80) return; hoverT = now;
+  const w = pickAt(e.clientX, e.clientY); office.setHover(w ? w.id : null); renderer.domElement.style.cursor = w ? "pointer" : "";
+});
+
 // ---------- kamera: izometrik boshlangʻich holat (yaqinroq — xodimlar aniq koʻrinsin) ----------
 const span = Math.max(totalW, totalD);
 controls.target.set(0.5, 0.6, 1.0); camera.position.set(0.5 + 6.5, 18, 1.0 + 21.5);
@@ -217,6 +246,11 @@ const fpsEl = document.querySelector("#fps b");
 function tick(now) {
   requestAnimationFrame(tick);
   controls.update();
+  if (focus) {                                                              // kamera xodimga yumshoq yaqinlashadi
+    const k = Math.min(1, (now - focus.t0) / focus.dur), e = 1 - Math.pow(1 - k, 3);
+    controls.target.lerpVectors(focus.fromT, focus.toT, e); camera.position.lerpVectors(focus.fromC, focus.toC, e);
+    if (k >= 1) focus = null;
+  }
   office.update(Math.min(0.1, (now - prev) / 1000), now / 1000, camera.position); prev = now;
   for (const s of signs) { const d = camera.position.distanceTo(s.obj.position), sc = d > 75 ? 0 : Math.min(1.2, Math.max(0.6, 28 / d)); if (Math.abs(sc - s.s) > 0.03) { s.s = sc; s.el.style.transform = `scale(${sc})`; s.el.style.opacity = sc ? 1 : 0; } }
   composer.render(); labels.render(scene, camera);
@@ -227,4 +261,4 @@ function tick(now) {
   }
 }
 requestAnimationFrame(tick);
-window.__ofis3d = { scene, camera, controls, zones, renderer, office, composer, bloom, I };
+window.__ofis3d = { scene, camera, controls, zones, renderer, office, composer, bloom, I, chat };

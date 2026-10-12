@@ -29,6 +29,7 @@ SITE = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(SITE))
 from server import store  # noqa: E402
 from runner import runner as runner_mod  # noqa: E402
+from server import chat as chat_mod, tts as tts_mod, asr as asr_mod  # noqa: E402  (CHAT-bosqich: faqat /3d ishlatadi)
 
 WEB = SITE / "web"
 TOKEN = None          # --lan rejimida
@@ -151,7 +152,16 @@ class Handler(BaseHTTPRequestHandler):
                 return self._send(200, store.list_dir(store.OUT_DIR, depth=1, exts=store.VIDEO_EXT))
             if r == "/api/file":
                 return self._file_range(self.query.get("path", ""))
+            # ---- CHAT-bosqich (3D): tarix, personalar, ovozlar ----
+            if r == "/api/personas":
+                return self._send(200, chat_mod.load_personas())
+            if r == "/api/tts/voices":
+                return self._send(200, tts_mod.list_voices())
+            if r == "/api/asr/status":
+                return self._send(200, asr_mod.status())
             parts = r.strip("/").split("/")
+            if len(parts) == 4 and parts[0] == "api" and parts[1] == "chat" and parts[3] == "history":
+                return self._send(200, chat_mod.history(urllib.parse.unquote(parts[2]), int(self.query.get("n", 30) or 30)))
             if len(parts) >= 3 and parts[0] == "api" and parts[1] == "jobs":
                 jid = urllib.parse.unquote(parts[2])
                 job = store.load_job(jid)
@@ -205,7 +215,33 @@ class Handler(BaseHTTPRequestHandler):
                 return self._send(200, {"job": store.load_job(job["id"])})
             if r == "/api/upload/init":
                 return self._upload_init(self._json_body())
+            # ---- CHAT-bosqich (3D): chat, ASR, TTS — montaj navbatidan mustaqil ----
+            if r == "/api/chat":
+                data = self._json_body()
+                try:
+                    return self._send(200, chat_mod.ask(str(data.get("agent") or ""), str(data.get("text") or "")))
+                except chat_mod.ChatBusy as e:
+                    return self._err(429, str(e))
+                except TimeoutError as e:
+                    return self._err(504, str(e))
+            if r == "/api/asr":
+                n = int(self.headers.get("Content-Length") or 0)
+                if n <= 0 or n > 30 * 1024 * 1024:
+                    return self._err(400, "audio hajmi noto'g'ri")
+                raw = self.rfile.read(n)
+                try:
+                    return self._send(200, asr_mod.transcribe(raw, self.headers.get("Content-Type", "")))
+                except TimeoutError as e:
+                    return self._err(504, str(e))
+            if r == "/api/tts":
+                data = self._json_body()
+                audio, mime, provider = tts_mod.synth(str(data.get("agent") or ""), str(data.get("text") or ""))
+                prov, _, note = provider.partition(" ")
+                return self._send(200, audio, mime, {"X-TTS-Provider": prov, "X-TTS-Note": note.strip()[:200].encode("ascii", "ignore").decode()})
             parts = r.strip("/").split("/")
+            if len(parts) == 4 and parts[0] == "api" and parts[1] == "chat" and parts[3] == "clear":
+                chat_mod.clear_history(urllib.parse.unquote(parts[2]))
+                return self._send(200, {"ok": True})
             if len(parts) == 4 and parts[0] == "api" and parts[1] == "upload" and parts[3] == "done":
                 return self._upload_done(parts[2])
             if len(parts) >= 4 and parts[0] == "api" and parts[1] == "jobs":
@@ -280,6 +316,8 @@ class Handler(BaseHTTPRequestHandler):
             if self.route == "/api/config":
                 data = self._json_body()
                 return self._send(200, store.save_config(data))
+            if self.route == "/api/personas":
+                return self._send(200, chat_mod.save_personas(self._json_body()))
             parts = self.route.strip("/").split("/")
             if len(parts) == 3 and parts[0] == "api" and parts[1] == "upload":
                 return self._upload_chunk(parts[2])

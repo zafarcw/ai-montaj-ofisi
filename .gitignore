@@ -17,3 +17,5 @@ _tekshiruv/snapshot_*.txt
 __pycache__/
 *.pyc
 .DS_Store
+chat/
+_cache/

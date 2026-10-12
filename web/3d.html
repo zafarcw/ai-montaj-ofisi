@@ -19,7 +19,56 @@
   </div>
 </header>
 <main id="stage" class="stage"></main>
-<div id="hint" class="hint">Aylantirish: chap tugma · Surish: oʻng tugma · Zoom: gʻildirak</div>
+<div id="hint" class="hint">Xodimni bosing — suhbat · Aylantirish: chap tugma · Surish: oʻng tugma · Zoom: gʻildirak</div>
+
+<!-- CHAT-bosqich: xodim bilan ovozli chat (faqat 3D sahifada) -->
+<aside id="chat" class="chat" hidden aria-label="Xodim bilan suhbat">
+  <header class="chat-head">
+    <span id="chat-avatar" class="chat-avatar" aria-hidden="true"></span>
+    <div class="chat-who"><b id="chat-name">—</b><small id="chat-role"></small></div>
+    <span id="chat-state" class="chat-state">boʻsh</span>
+    <button id="chat-voice" class="icon-btn" type="button" title="Ovozli javob (yoqiq)" aria-pressed="true">🔊</button>
+    <button id="chat-cfg-btn" class="icon-btn" type="button" title="Chat sozlamalari">⚙︎</button>
+    <button id="chat-close" class="icon-btn" type="button" title="Yopish (Esc)">✕</button>
+  </header>
+  <div class="chat-sub"><span id="chat-mode" class="chat-mode">Roast 18+</span><span id="chat-note" class="chat-note"></span></div>
+  <div id="chat-log" class="chat-log" aria-live="polite"></div>
+  <form id="chat-form" class="chat-form" autocomplete="off">
+    <button id="chat-mic" class="chat-mic" type="button" title="Bosib turing — gapiring" aria-label="Ovozli kirish">🎙</button>
+    <input id="chat-text" type="text" placeholder="Yozing yoki 🎙 ni bosib turib gapiring…" maxlength="600">
+    <button id="chat-send" class="chat-send" type="submit" title="Yuborish" aria-label="Yuborish">➤</button>
+    <button id="chat-stop" class="chat-stop" type="button" title="Ovozni toʻxtatish" hidden>■ Toʻxtat</button>
+  </form>
+</aside>
+
+<div id="age-gate" class="modal" hidden>
+  <div class="modal-card narrow">
+    <div class="modal-head"><h3>Roast 18+ rejimi</h3></div>
+    <p class="muted">Xodimlar achchiq hazil, qoʻpol sarkazm va soʻkinish bilan javob beradi. Bu rejim faqat kattalar uchun. Bir marta tasdiqlanadi, keyin soʻralmaydi; Sozlamalarda «Yumshoq» ga oʻtkazish mumkin.</p>
+    <div class="form-actions"><button id="age-soft" class="btn ghost" type="button">Yumshoq rejim</button><button id="age-yes" class="btn primary" type="button">18 yoshdan kattaman — Roast yoqilsin</button></div>
+  </div>
+</div>
+
+<div id="chat-cfg" class="modal" hidden>
+  <div class="modal-card">
+    <div class="modal-head"><h3>Chat sozlamalari</h3><button class="icon-btn" id="cfg-close" type="button" aria-label="Yopish">✕</button></div>
+    <form id="cfg-form" class="form">
+      <div class="row2">
+        <label>Hazil rejimi <select name="mode"><option value="roast">Roast 18+</option><option value="soft">Yumshoq</option></select></label>
+        <label>Ovozli javob <select name="voice_reply"><option value="1">Yoqiq</option><option value="0">Oʻchiq</option></select></label>
+      </div>
+      <div class="row2">
+        <label>TTS provayder <select name="provider"><option value="auto">Avto (kalit boʻlsa ElevenLabs, boʻlmasa say)</option><option value="say">macOS say (offline)</option><option value="elevenlabs">ElevenLabs</option></select></label>
+        <label>Chat modeli <select name="chat_model"><option value="haiku">haiku (tez, arzon)</option><option value="sonnet">sonnet</option></select></label>
+      </div>
+      <label>ElevenLabs API kaliti (faqat config.json da saqlanadi, git'ga tushmaydi) <input name="elevenlabs_key" type="password" placeholder="sk_…" autocomplete="off"></label>
+      <div id="cfg-voices" class="cfg-voices"></div>
+      <details class="cfg-personas"><summary>Personalar (xarakter matni)</summary><div id="cfg-personas"></div></details>
+      <div class="form-actions"><span id="cfg-info" class="muted"></span><span><button id="cfg-clear" class="btn ghost small" type="button">Shu xodim tarixini tozalash</button> <button class="btn primary" type="submit">Saqlash</button></span></div>
+    </form>
+  </div>
+</div>
+
 <script type="module" src="/web/3d/scene.js"></script>
 </body>
 </html>
