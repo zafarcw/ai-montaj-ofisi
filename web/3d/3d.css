@@ -1,13 +1,17 @@
 .page-3d { overflow: hidden; background: #07080b; }
 .page-3d .stage { position: fixed; inset: 56px 0 0 0; }
 .page-3d .stage canvas { display: block; width: 100%; height: 100%; touch-action: none; }
-.zone-label { font: 600 13px/1 "Inter Display", system-ui, sans-serif; letter-spacing: .02em; padding: 5px 10px; border-radius: 999px;
-  color: #fff; background: color-mix(in srgb, var(--c) 28%, rgba(10,10,12,.8)); border: 1px solid color-mix(in srgb, var(--c) 60%, transparent);
-  white-space: nowrap; pointer-events: none; }
+.lod { transition: opacity .3s; }
+.lod > * { transition: transform .25s; transform-origin: 50% 100%; }
+/* zona yorligʻi — neon yozuv devorda */
+.zone-sign { font: 700 15px/1 "Inter Display", system-ui, sans-serif; letter-spacing: .07em; text-transform: uppercase; white-space: nowrap; pointer-events: none;
+  color: color-mix(in srgb, var(--c) 40%, #fff); text-shadow: 0 0 5px var(--c), 0 0 16px var(--c), 0 0 34px color-mix(in srgb, var(--c) 75%, transparent); }
+.zone-sign i { font-style: normal; font-size: 17px; margin-right: 2px; filter: drop-shadow(0 0 6px var(--c)); vertical-align: -1px; }
 .hint { position: fixed; left: 50%; bottom: 14px; transform: translateX(-50%); font-size: 12px; color: var(--txt-3); pointer-events: none; text-align: center; width: max-content; max-width: 92vw; }
-@media (max-width: 640px) { .page-3d .topbar-center { display: none; } .zone-label { font-size: 11px; padding: 4px 8px; } }
-.worker-name { font: 600 11px/1 "Inter Display", system-ui, sans-serif; color: #fff; padding: 3px 7px; border-radius: 999px; background: rgba(10,10,12,.72); border: 1px solid color-mix(in srgb, var(--c) 55%, transparent); white-space: nowrap; transform: translateY(-4px); }
-.worker-bubble { position: relative; max-width: 190px; font: 500 11px/1.3 "Inter Display", system-ui, sans-serif; color: #fff; padding: 5px 8px; border-radius: 10px; background: rgba(18,18,22,.9);
+@media (max-width: 640px) { .page-3d .topbar-center { display: none; } .zone-sign { font-size: 12px; } }
+/* xodim ismi — faqat xodim tepasida */
+.worker-name { font: 600 12px/1 "Inter Display", system-ui, sans-serif; color: #fff; padding: 4px 9px; border-radius: 999px; background: rgba(10,10,12,.72); border: 1px solid color-mix(in srgb, var(--c) 60%, transparent); white-space: nowrap; box-shadow: 0 0 10px color-mix(in srgb, var(--c) 35%, transparent); }
+.worker-bubble { position: relative; max-width: 200px; font: 500 11px/1.3 "Inter Display", system-ui, sans-serif; color: #fff; padding: 5px 9px; border-radius: 10px; background: rgba(18,18,22,.9);
   border: 1px solid var(--tc, #888); opacity: 0; transform: translateY(8px) scale(.9); transition: opacity .25s, transform .3s cubic-bezier(.16,1,.3,1); display: flex; gap: 6px; align-items: baseline; overflow: hidden; }
 .worker-bubble.on { opacity: 1; transform: none; }
 .worker-bubble b { color: var(--tc, #fff); font-weight: 700; flex: none; }
