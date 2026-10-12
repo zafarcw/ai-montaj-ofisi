@@ -9,7 +9,7 @@ Bosqich tugagach shu faylning "Holat" jadvalida o'sha qatorni ✅ qilib, commit 
 | 1 | Sahna, zonalar, stollar, kamera, `/3d` | ✅ `73c7a5d` |
 | 2 | Xodimlar, holatlar, tool pufakchalari, SSE feed | ✅ `c5e9b80` |
 | 2b | Dizaynni yaxshilash (yorug'lik, jihozlar, xodimlar) | ✅ `023a7fe` |
-| **CHAT** | **USTUVOR (Zafar 12-10):** 3D ofisda xodimni bosganda ovozli Roast-chat — 4+5+6 bosqichlarning birlashgan varianti | ⏳ |
+| **CHAT** | **USTUVOR (Zafar 12-10):** 3D ofisda xodimni bosganda ovozli Roast-chat — 4+5+6 bosqichlarning birlashgan varianti | ✅ `1a84f8c` |
 | 2c | AFK botlar, kun/tun rejimi, ofis mushugi | ⏳ |
 | 3 | Haqiqiy oqimga ulash + o'ng panel | ⏳ |
 | 4 | Xodimlar bilan chat + "Roast" rejimi | → CHAT ga birlashtirildi |
@@ -186,4 +186,5 @@ Hammasi **haqiqiy ma'lumotdan**:
 - Saytning **ichidagi** chat (4-bosqich) baribir `haiku` + `--system-prompt` + tool'siz bo'lib qoladi — bu qurish modeli emas,
   har xabarda ishlaydigan runtime; fable bo'lsa har hazil juda qimmatga tushadi.
 - Tekshiruvda avval konsol/matn, skrinshot faqat dizaynni ko'rish kerak bo'lganda.
+- Chrome kengaytmasi (MCP) ulanmasa: `_tekshiruv/cdp_shot.py` — headless Chrome (`--remote-debugging-port`) + CDP skrinshot; konsol: `--enable-logging=stderr --v=0`.
 - Katta fayllarni to'liq o'qitma; kerakli joyini so'ra.
