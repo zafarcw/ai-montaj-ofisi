@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="uz">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<title>AI Montaj Ofisi — 3D</title>
+<link rel="icon" href="/web/icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/web/style.css">
+<link rel="stylesheet" href="/web/3d/3d.css">
+<script type="importmap">{"imports":{"three":"/web/vendor/three/three.module.js"}}</script>
+</head>
+<body class="page-3d">
+<header class="topbar">
+  <div class="brand"><span class="logo-mark" aria-hidden="true"></span><h1>AI Montaj Ofisi</h1></div>
+  <div class="topbar-center"><span class="stat"><small>Ko'rinish</small><b>3D ofis</b></span><span id="fps" class="stat"><small>FPS</small><b>—</b></span></div>
+  <div class="topbar-right">
+    <nav class="view-switch" aria-label="Ko'rinish"><a href="/">2D</a><a class="on" href="/3d">3D</a></nav>
+  </div>
+</header>
+<main id="stage" class="stage"></main>
+<div id="hint" class="hint">Aylantirish: chap tugma · Surish: o'ng tugma · Zoom: g'ildirak</div>
+<script type="module" src="/web/3d/scene.js"></script>
+</body>
+</html>

@@ -130,6 +130,8 @@ class Handler(BaseHTTPRequestHandler):
             r = self.route
             if r == "/" or r == "/index.html":
                 return self._static(WEB / "index.html")
+            if r == "/3d" or r == "/3d/":
+                return self._static(WEB / "3d.html")
             if r.startswith("/web/"):
                 return self._static(WEB / r[5:])
             if r == "/api/config":

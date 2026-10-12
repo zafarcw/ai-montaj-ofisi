@@ -1,0 +1,8 @@
+.page-3d { overflow: hidden; background: #07080b; }
+.page-3d .stage { position: fixed; inset: 56px 0 0 0; }
+.page-3d .stage canvas { display: block; width: 100%; height: 100%; touch-action: none; }
+.zone-label { font: 600 13px/1 "Inter Display", system-ui, sans-serif; letter-spacing: .02em; padding: 5px 10px; border-radius: 999px;
+  color: #fff; background: color-mix(in srgb, var(--c) 28%, rgba(10,10,12,.8)); border: 1px solid color-mix(in srgb, var(--c) 60%, transparent);
+  white-space: nowrap; pointer-events: none; }
+.hint { position: fixed; left: 50%; bottom: 14px; transform: translateX(-50%); font-size: 12px; color: var(--txt-3); pointer-events: none; text-align: center; width: max-content; max-width: 92vw; }
+@media (max-width: 640px) { .page-3d .topbar-center { display: none; } .zone-label { font-size: 11px; padding: 4px 8px; } }
